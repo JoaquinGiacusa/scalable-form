@@ -1,123 +1,249 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from '@/styles/Home.module.css'
+import {
+  FormControl,
+  InputLabel,
+  FormHelperText,
+  OutlinedInput,
+  InputAdornment,
+  IconButton,
+  Box,
+  Select,
+  MenuItem,
+  Stack,
+} from "@mui/material";
+import Button from "@mui/material/Button";
+import { useState } from "react";
+import {
+  useForm,
+  FormProvider,
+  useFormContext,
+  SubmitHandler,
+  FieldValues,
+} from "react-hook-form";
 
-const inter = Inter({ subsets: ['latin'] })
+const slides = [
+  {
+    id: 1,
+    title: "slide hardcoded 1",
+    url_image:
+      "https://cdn.pixabay.com/photo/2015/12/06/09/15/maple-1079235_1280.jpg",
+    url_destination:
+      "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley",
+    order: 1,
+  },
+  {
+    id: 2,
+    title: "slide hardcoded 2",
+    url_image:
+      "https://cdn.pixabay.com/photo/2016/09/22/10/44/banner-1686943_1280.jpg",
+    url_destination:
+      "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley",
+    order: 2,
+  },
+  {
+    id: 3,
+    title: "slide hardcoded 3",
+    url_image:
+      "https://cdn.pixabay.com/photo/2017/10/03/17/53/nature-2813487_1280.jpg",
+    url_destination:
+      "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley",
+    order: 3,
+  },
+];
+
+type InputProps = {
+  label: string;
+  type: string;
+  name: string;
+  isRequired?: boolean;
+  selectValue?: number[] | string[];
+};
+
+const InputBasic: React.FC<InputProps> = ({
+  label,
+  type,
+  name,
+  isRequired,
+  selectValue,
+}) => {
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext();
+
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+
+  const isError = Boolean(errors[name]?.message);
+  const isText = type == "text" || type == "email" || type == "password";
+
+  return (
+    <FormControl fullWidth>
+      <InputLabel
+        error={isError}
+        htmlFor={name}
+        shrink={type == "date" ? true : undefined}
+      >
+        {label}
+      </InputLabel>
+
+      {isText && (
+        <OutlinedInput
+          {...register(name, {
+            required: {
+              value: isRequired || false,
+              message: "This field is required",
+            },
+          })}
+          type={showPassword ? "text" : type}
+          error={isError}
+          id={name}
+          label={label}
+          endAdornment={
+            type == "password" && (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="toggle password visibility"
+                  onClick={handleClickShowPassword}
+                  edge="end"
+                >
+                  {showPassword ? <>Show</> : <>Not Show</>}
+                </IconButton>
+              </InputAdornment>
+            )
+          }
+        />
+      )}
+      {selectValue && (
+        <Select
+          labelId={name}
+          id={name}
+          defaultValue={selectValue[0]}
+          label={label}
+          {...register(name, {
+            required: {
+              value: isRequired || false,
+              message: "This field is required",
+            },
+          })}
+        >
+          {selectValue?.map((v) => (
+            <MenuItem key={v} value={v}>
+              {v}
+            </MenuItem>
+          ))}
+        </Select>
+      )}
+      {type == "date" && (
+        <OutlinedInput
+          {...register(name, {
+            required: {
+              value: isRequired || false,
+              message: "This field is required",
+            },
+          })}
+          type={type}
+          error={isError}
+          id={name}
+          notched
+          label={label}
+        />
+      )}
+      <FormHelperText
+        error={isError}
+        id={name}
+        children={isError ? String(errors[name]?.message) : " "}
+      ></FormHelperText>
+    </FormControl>
+  );
+};
+
+type FormProps = {
+  formArray: InputProps[][];
+  onSubmit: SubmitHandler<{
+    email: string;
+    firstName: string;
+    lastName: string;
+    password: string;
+  }>;
+};
+
+const Form: React.FC<FormProps> = ({ formArray, onSubmit }) => {
+  const methods = useForm<{
+    email: string;
+    firstName: string;
+    lastName: string;
+    password: string;
+  }>();
+
+  return (
+    <FormProvider {...methods}>
+      <Box
+        component={"form"}
+        action="submit"
+        onSubmit={methods.handleSubmit(onSubmit)}
+        style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+      >
+        {formArray.map((row, index) => (
+          <Stack
+            key={index + 100}
+            spacing={2}
+            direction={"row"}
+            sx={{ widows: "100%" }}
+          >
+            {row.map((i, index) => {
+              return (
+                <InputBasic
+                  key={index}
+                  label={i.label}
+                  type={i.type}
+                  name={i.name}
+                  isRequired={i.isRequired}
+                  selectValue={i.selectValue}
+                />
+              );
+            })}
+          </Stack>
+        ))}
+
+        <Button variant="contained" type="submit">
+          Enviar
+        </Button>
+      </Box>
+    </FormProvider>
+  );
+};
+
+const options: InputProps[][] = [
+  [
+    { label: "FirstName", type: "text", name: "firstName" },
+    { label: "LastName", type: "text", name: "lastName" },
+  ],
+  [{ label: "Email", type: "text", name: "email", isRequired: true }],
+  [{ label: "Password", type: "password", name: "password" }],
+  [
+    {
+      label: "Order",
+      type: "select",
+      name: "order",
+      selectValue: ["Admin", "User"],
+    },
+  ],
+  [
+    {
+      label: "BirthDate",
+      name: "birthdate",
+      type: "date",
+    },
+  ],
+];
 
 export default function Home() {
+  const onSubmit: SubmitHandler<FieldValues> = (data) => console.log(data);
+
   return (
     <>
-      <Head>
-        <title>Create Next App</title>
-        <meta name="description" content="Generated by create next app" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
-        </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
+      <Form formArray={options} onSubmit={onSubmit} />
     </>
-  )
+  );
 }
